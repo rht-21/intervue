@@ -169,7 +169,7 @@
   }
 
   .btn-disconnect {
-    @apply inline-block px-7 py-3 text-sm font-bold leading-5 text-white transition-colors duration-150 bg-destructive-100 border border-transparent rounded-full shadow-sm focus:outline-none focus:shadow-2xl active:bg-destructive-200 hover:bg-destructive-200 min-w-28;
+    @apply inline-block px-7 py-3 text-sm font-bold leading-5 text-white transition-colors duration-150 bg-destructive-100 border border-transparent rounded-full shadow-sm focus:outline-none focus:shadow-2xl active:bg-destructive-200 hover:bg-destructive-200 min-w-28 cursor-pointer;
   }
 
   .btn-upload {
@@ -300,7 +300,7 @@
 }
 
 @utility dark-gradient {
-  @apply bg-gradient-to-b from-[#152415] to-[#060a06];
+  @apply bg-gradient-to-b from-[#081408] to-[#060a06];
 }
 
 @utility border-gradient {
@@ -312,7 +312,7 @@
 }
 
 @utility blue-gradient-dark {
-  @apply bg-gradient-to-b from-[#0a1e10] to-[#090e0b];
+  @apply bg-gradient-to-b from-[#1c3824] to-[#090e0b];
 }
 
 @utility blue-gradient {
