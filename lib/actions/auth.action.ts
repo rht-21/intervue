@@ -3,6 +3,7 @@
 
 import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
+import nodemailer from "nodemailer";
 
 const ONE_WEEK = 60 * 60 * 24 * 7;
 
@@ -119,6 +120,47 @@ export async function isAuthenticated() {
   return !!user;
 }
 
+// export async function forgotPassword(email: string) {
+//   try {
+//     const userQuery = await db
+//       .collection("users")
+//       .where("email", "==", email)
+//       .get();
+
+//     if (userQuery.empty) {
+//       return {
+//         success: false,
+//         message: "No account found with this email.",
+//       };
+//     }
+
+//     const continueUrl = `${process.env.NEXT_PUBLIC_URL}/sign-in`;
+
+//     const actionCodeSettings = {
+//       url: continueUrl,
+//       handleCodeInApp: true,
+//     };
+
+//     const resetLink = await auth.generatePasswordResetLink(
+//       email,
+//       actionCodeSettings
+//     );
+
+//     console.log(`Reset link: ${resetLink}`);
+
+//     return {
+//       success: true,
+//       message: "Password reset link generated. Please check your email.",
+//     };
+//   } catch (error: any) {
+//     console.error("Failed to generate password reset link:", error);
+//     return {
+//       success: false,
+//       message: error.message || "Failed to generate password reset link.",
+//     };
+//   }
+// }
+
 export async function forgotPassword(email: string) {
   try {
     const userQuery = await db
@@ -145,11 +187,11 @@ export async function forgotPassword(email: string) {
       actionCodeSettings
     );
 
-    console.log(`Reset link: ${resetLink}`);
+    await sendResetEmail(email, resetLink);
 
     return {
       success: true,
-      message: "Password reset link generated. Please check your email.",
+      message: "Password reset link has been sent to your email.",
     };
   } catch (error: any) {
     console.error("Failed to generate password reset link:", error);
@@ -157,5 +199,34 @@ export async function forgotPassword(email: string) {
       success: false,
       message: error.message || "Failed to generate password reset link.",
     };
+  }
+}
+
+async function sendResetEmail(email: string, resetLink: string) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      to: email,
+      subject: "Intervue Password Reset Link",
+      html: `
+        <p>Hello,</p>
+        <p>You requested a password reset. Click the link below to reset your password:</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Reset link sent to ${email}`);
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send password reset email.");
   }
 }
