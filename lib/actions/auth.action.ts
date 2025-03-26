@@ -120,47 +120,6 @@ export async function isAuthenticated() {
   return !!user;
 }
 
-// export async function forgotPassword(email: string) {
-//   try {
-//     const userQuery = await db
-//       .collection("users")
-//       .where("email", "==", email)
-//       .get();
-
-//     if (userQuery.empty) {
-//       return {
-//         success: false,
-//         message: "No account found with this email.",
-//       };
-//     }
-
-//     const continueUrl = `${process.env.NEXT_PUBLIC_URL}/sign-in`;
-
-//     const actionCodeSettings = {
-//       url: continueUrl,
-//       handleCodeInApp: true,
-//     };
-
-//     const resetLink = await auth.generatePasswordResetLink(
-//       email,
-//       actionCodeSettings
-//     );
-
-//     console.log(`Reset link: ${resetLink}`);
-
-//     return {
-//       success: true,
-//       message: "Password reset link generated. Please check your email.",
-//     };
-//   } catch (error: any) {
-//     console.error("Failed to generate password reset link:", error);
-//     return {
-//       success: false,
-//       message: error.message || "Failed to generate password reset link.",
-//     };
-//   }
-// }
-
 export async function forgotPassword(email: string) {
   try {
     const userQuery = await db
@@ -229,4 +188,37 @@ async function sendResetEmail(email: string, resetLink: string) {
     console.error("Error sending email:", error);
     throw new Error("Failed to send password reset email.");
   }
+}
+
+export async function getInterviewsByUserId(
+  userId: string
+): Promise<Interview[] | null> {
+  const interview = await db
+    .collection("interviews")
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .get();
+
+  return interview.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Interview[];
+}
+
+export async function getLatestInterviews(
+  params: GetLatestInterviewsParams
+): Promise<Interview[] | null> {
+  const { userId, limit = 20 } = params;
+  const interview = await db
+    .collection("interviews")
+    .orderBy("createdAt", "desc")
+    .where("finalized", "==", true)
+    .where("userId", "!=", userId)
+    .limit(limit)
+    .get();
+
+  return interview.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Interview[];
 }
