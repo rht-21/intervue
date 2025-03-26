@@ -13,10 +13,10 @@
   --color-primary-100: #a7e8bd;
   --color-primary-200: #3ccd6d;
 
-  --color-light-100: #d6e0ff;
-  --color-light-400: #6870a6;
-  --color-light-600: #4f557d;
-  --color-light-800: #24273a;
+  --color-light-100: #93cca7;
+  --color-light-400: #537760;
+  --color-light-600: #2a4b36;
+  --color-light-800: #0d2917;
 
   --color-dark-100: #020408;
   --color-dark-200: #27282f;
@@ -207,6 +207,10 @@
 
     .btn {
       @apply !w-full !bg-primary-200 !text-dark-100 hover:!bg-primary-200/80 !rounded-full !min-h-10 !font-bold !px-3 cursor-pointer;
+    }
+
+    .btn-google {
+      @apply !w-full !bg-light-100 !text-dark-100 hover:!bg-light-400 !rounded-full !min-h-10 !font-bold !px-3 cursor-pointer;
     }
   }
 

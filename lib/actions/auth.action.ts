@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { auth, db } from "@/firebase/admin";
@@ -116,4 +117,45 @@ export async function isAuthenticated() {
   const user = await getCurrentUser();
 
   return !!user;
+}
+
+export async function forgotPassword(email: string) {
+  try {
+    const userQuery = await db
+      .collection("users")
+      .where("email", "==", email)
+      .get();
+
+    if (userQuery.empty) {
+      return {
+        success: false,
+        message: "No account found with this email.",
+      };
+    }
+
+    const continueUrl = `${process.env.NEXT_PUBLIC_URL}/sign-in`;
+
+    const actionCodeSettings = {
+      url: continueUrl,
+      handleCodeInApp: true,
+    };
+
+    const resetLink = await auth.generatePasswordResetLink(
+      email,
+      actionCodeSettings
+    );
+
+    console.log(`Reset link: ${resetLink}`);
+
+    return {
+      success: true,
+      message: "Password reset link generated. Please check your email.",
+    };
+  } catch (error: any) {
+    console.error("Failed to generate password reset link:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to generate password reset link.",
+    };
+  }
 }

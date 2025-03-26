@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,9 +15,15 @@ import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth } from "@/firebase/client";
 import { signIn, signUp } from "@/lib/actions/auth.action";
+import { FcGoogle } from "react-icons/fc";
+import { useState } from "react";
+import Loader from "./Loader";
+import ResetEmailPopup from "./ResetEmailPopup";
 
 const authFormSchema = (type: "sign-in" | "sign-up") => {
   return z.object({
@@ -36,6 +43,9 @@ const authFormSchema = (type: "sign-in" | "sign-up") => {
 };
 
 const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
   const formSchema = authFormSchema(type);
   const router = useRouter();
 
@@ -49,6 +59,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
     try {
       if (type === "sign-up") {
         const { name, email, password } = values;
@@ -93,75 +104,123 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
       }
     } catch (error) {
       toast.error(`Something went wrong ${error}`);
+    } finally {
+      setIsLoading(false);
     }
   }
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      if (result) {
+        const user = result.user;
+        const idToken = await user?.getIdToken();
+
+        if (!idToken) {
+          toast.error("Something went wrong");
+          return;
+        }
+
+        await signIn({ email: user.email!, idToken });
+        toast.success("Signed in successfully.");
+        router.push("/");
+      }
+    } catch (error: any) {
+      toast.error(`Google Sign-In failed: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const isSignIn = type === "sign-in";
 
   return (
-    <section className="card-border lg:min-w-[566px]">
-      <div className="flex flex-col gap-6 card py-14 px-10">
-        <div className="flex flex-row gap-2 justify-center">
-          <Image src="/logo.png" width={32} height={32} alt="logo" />
-          <h2 className="text-primary-100">Intervue</h2>
-        </div>
-        <h3>Practice Job Interview with AI</h3>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="w-full space-y-6 mt-4 form"
-          >
-            {!isSignIn && (
-              <FormField
-                control={form.control}
-                name="name"
-                label="Name"
-                placeholder="Enter Your Name"
-              />
-            )}
-            <FormField
-              control={form.control}
-              name="email"
-              label="Email"
-              type="email"
-              placeholder="Enter Your Email Address"
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              label="Password"
-              type="password"
-              placeholder="Enter Your Password"
-            />
-
-            {!isSignIn && (
-              <div className="w-full text-right -mt-5 text-sm">
-                <Link
-                  href={"/forget-password"}
-                  className="text-light-400 duration-150 hover:text-light-100"
-                >
-                  Can&apos;t remember your password?
-                </Link>
-              </div>
-            )}
-
-            <Button className="btn" type="submit">
-              {isSignIn ? "Sign In" : "Create an Account"}
-            </Button>
-
-            <p className="text-center">
-              {isSignIn ? "Don't have an account?" : "Already have an account?"}
-              <Link
-                href={isSignIn ? "/sign-up" : "/sign-in"}
-                className="font-medium text-primary-100 ml-1"
+    <>
+      {isLoading && <Loader />}
+      {!showResetPassword && (
+        <section className="card-border lg:min-w-[566px]">
+          <div className="flex flex-col gap-6 card py-14 px-10">
+            <div className="flex flex-row gap-2 justify-center">
+              <Image src="/logo.png" width={32} height={32} alt="logo" />
+              <h2 className="text-primary-100">Intervue</h2>
+            </div>
+            <h3>Practice Job Interview with AI</h3>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="w-full space-y-6 mt-4 form"
               >
-                {isSignIn ? "Sign Up" : "Sign In"}
-              </Link>
-            </p>
-          </form>
-        </Form>
-      </div>
-    </section>
+                {!isSignIn && (
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    label="Name"
+                    placeholder="Enter Your Name"
+                  />
+                )}
+                <FormField
+                  control={form.control}
+                  name="email"
+                  label="Email"
+                  type="email"
+                  placeholder="Enter Your Email Address"
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  label="Password"
+                  type="password"
+                  placeholder="Enter Your Password"
+                />
+
+                {isSignIn && (
+                  <div className="w-full text-right -mt-5 text-sm">
+                    <p
+                      onClick={() => setShowResetPassword(true)}
+                      className="text-light-400 duration-150 hover:text-light-100 cursor-pointer"
+                    >
+                      Can&apos;t remember your password?
+                    </p>
+                  </div>
+                )}
+
+                <Button className="btn" type="submit">
+                  {isSignIn ? "Sign In" : "Create an Account"}
+                </Button>
+
+                <hr />
+
+                <Button
+                  className="btn-google"
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                >
+                  <FcGoogle />
+                  Continue with Google
+                </Button>
+
+                <p className="text-center">
+                  {isSignIn
+                    ? "Don't have an account?"
+                    : "Already have an account?"}
+                  <Link
+                    href={isSignIn ? "/sign-up" : "/sign-in"}
+                    className="font-medium text-primary-100 ml-1"
+                  >
+                    {isSignIn ? "Sign Up" : "Sign In"}
+                  </Link>
+                </p>
+              </form>
+            </Form>
+          </div>
+        </section>
+      )}
+      {showResetPassword && (
+        <ResetEmailPopup setShowResetPassword={setShowResetPassword} />
+      )}
+    </>
   );
 };
 
