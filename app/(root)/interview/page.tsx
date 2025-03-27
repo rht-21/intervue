@@ -7,7 +7,11 @@ const page = async () => {
 
   return (
     <>
-      <h3>Generate Your Interview</h3>
+      <h3 className="-mt-4">Create Your AI-Powered Interview</h3>
+      <p className="-mt-10">
+        Hi {user?.name}, customize your interview by selecting the criteria that
+        matter to you. Our AI will generate questions tailored to your needs.
+      </p>
       <Agent
         userName={user?.name as string}
         userId={user?.id}
