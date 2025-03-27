@@ -9,6 +9,15 @@ const ONE_WEEK = 60 * 60 * 24 * 7;
 
 export async function signUp(params: SignUpParams) {
   const { uid, name, email } = params;
+
+  // Validate inputs
+  if (!uid || !name || !email) {
+    return {
+      success: false,
+      message: "Missing required fields.",
+    };
+  }
+
   try {
     const userRecord = await db.collection("users").doc(uid).get();
 
@@ -30,22 +39,27 @@ export async function signUp(params: SignUpParams) {
     };
   } catch (e: any) {
     console.error("Error creating a user", e);
-    if (e.code === "auth/email-already-exists") {
-      return {
-        success: false,
-        message: "Email already exists",
-      };
-    }
+    return {
+      success: false,
+      message:
+        e.code === "auth/email-already-exists"
+          ? "Email already exists"
+          : "Failed to create an account",
+    };
   }
-
-  return {
-    success: false,
-    message: "Failed to create an account",
-  };
 }
 
 export async function signIn(params: SignInParams) {
   const { email, idToken } = params;
+
+  // Validate inputs
+  if (!email || !idToken) {
+    return {
+      success: false,
+      message: "Missing email or token.",
+    };
+  }
+
   try {
     const userRecord = await auth.getUserByEmail(email);
 
@@ -57,9 +71,9 @@ export async function signIn(params: SignInParams) {
     }
 
     await setSessionCookie(idToken);
+    return { success: true };
   } catch (e) {
     console.error(e);
-
     return {
       success: false,
       message: "Failed to log into an account.",
@@ -70,63 +84,67 @@ export async function signIn(params: SignInParams) {
 export async function setSessionCookie(idToken: string) {
   const cookieStore = await cookies();
 
-  const sessionCookie = await auth.createSessionCookie(idToken, {
-    expiresIn: ONE_WEEK * 1000,
-  });
+  try {
+    const sessionCookie = await auth.createSessionCookie(idToken, {
+      expiresIn: ONE_WEEK * 1000,
+    });
 
-  cookieStore.set("session", sessionCookie, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    sameSite: "lax",
-    maxAge: ONE_WEEK,
-  });
+    cookieStore.set("session", sessionCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "lax",
+      maxAge: ONE_WEEK,
+    });
+  } catch (e) {
+    console.error("Error setting session cookie:", e);
+  }
 }
 
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
-
   const sessionCookie = cookieStore.get("session")?.value;
 
-  if (!sessionCookie) {
-    return null;
-  }
+  if (!sessionCookie) return null;
 
   try {
     const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+    if (!decodedClaims?.uid) return null;
 
     const userRecord = await db
       .collection("users")
       .doc(decodedClaims.uid)
       .get();
-
-    if (!userRecord.exists) {
-      return null;
-    }
+    if (!userRecord.exists) return null;
 
     return {
       ...userRecord.data(),
       id: userRecord.id,
     } as User;
   } catch (e: any) {
-    console.error(e);
+    console.error("Error fetching current user:", e);
     return null;
   }
 }
 
 export async function isAuthenticated() {
-  const user = await getCurrentUser();
-
-  return !!user;
+  return !!(await getCurrentUser());
 }
 
 export async function forgotPassword(email: string) {
+  // Validate input
+  if (!email) {
+    return {
+      success: false,
+      message: "Email is required.",
+    };
+  }
+
   try {
     const userQuery = await db
       .collection("users")
       .where("email", "==", email)
       .get();
-
     if (userQuery.empty) {
       return {
         success: false,
@@ -135,17 +153,12 @@ export async function forgotPassword(email: string) {
     }
 
     const continueUrl = `${process.env.NEXT_PUBLIC_URL}/sign-in`;
-
-    const actionCodeSettings = {
-      url: continueUrl,
-      handleCodeInApp: true,
-    };
+    const actionCodeSettings = { url: continueUrl, handleCodeInApp: true };
 
     const resetLink = await auth.generatePasswordResetLink(
       email,
       actionCodeSettings
     );
-
     await sendResetEmail(email, resetLink);
 
     return {
