@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 import dayjs from "dayjs";
 import { getRandomInterviewCover } from "@/lib/utils";
@@ -8,7 +9,7 @@ import DisplayTechIcons from "./DisplayTechIcons";
 import { IconCalendarFilled, IconStarFilled } from "@tabler/icons-react";
 
 const InterviewCard = ({
-  interviewId,
+  id,
   userId,
   role,
   type,
@@ -56,11 +57,7 @@ const InterviewCard = ({
           <DisplayTechIcons techStack={techstack} />
           <Button className="btn-primary">
             <Link
-              href={
-                feedback
-                  ? `/interview/${interviewId}/feedback`
-                  : `/interview/${interviewId}`
-              }
+              href={feedback ? `/interview/${id}/feedback` : `/interview/${id}`}
             >
               {feedback ? "View Feedback" : "View Interview"}
             </Link>
