@@ -26,7 +26,8 @@ const Page = async () => {
       <section className="card-cta">
         <div className="flex flex-col gap-6 max-w-lg">
           <h2 className="text-3xl font-bold text-primary-100">
-            Elevate Your Interview Skills with AI-Driven Practice & Insights
+            Hi {user?.name || ""}, Elevate Your Interview Skills with AI-Driven
+            Practice & Insights
           </h2>
           <p>
             Engage with real-world interview questions and receive instant,

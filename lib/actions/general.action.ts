@@ -32,12 +32,13 @@ export async function getLatestInterviews(
 ): Promise<Interview[] | null> {
   const { userId, limit = 20 } = params;
 
-  if (!userId) return null; // Ensure userId is not undefined
+  if (!userId) return null;
 
   try {
     const interviewSnapshot = await db
       .collection("interviews")
       .where("finalized", "==", true)
+      .where("userId", "!=", userId)
       .orderBy("createdAt", "desc")
       .limit(limit)
       .get();
