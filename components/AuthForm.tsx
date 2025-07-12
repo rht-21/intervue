@@ -192,14 +192,14 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
 
                 <hr />
 
-                <Button
+                {/* <Button
                   className="btn-google"
                   type="button"
                   onClick={handleGoogleSignIn}
                 >
                   <FcGoogle />
                   Continue with Google
-                </Button>
+                </Button> */}
 
                 <p className="text-center">
                   {isSignIn
